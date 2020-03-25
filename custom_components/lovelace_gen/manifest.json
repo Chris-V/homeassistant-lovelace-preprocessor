@@ -1,6 +1,6 @@
 {
-  "domain": "lovelace_gen",
-  "name": "Lovelace Gen",
+  "domain": "lovelace_preprocessor",
+  "name": "Lovelace Preprocessor",
   "documentation": "",
   "dependencies": ["lovelace"],
   "codeowners": [],
