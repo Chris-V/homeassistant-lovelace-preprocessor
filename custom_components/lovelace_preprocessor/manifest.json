@@ -2,6 +2,8 @@
   "domain": "lovelace_preprocessor",
   "name": "Lovelace Preprocessor",
   "documentation": "",
+  "iot_class": "local_push",
+  "version": "1.0.0",
   "dependencies": ["lovelace"],
   "codeowners": [],
   "requirements": ["jinja2"]

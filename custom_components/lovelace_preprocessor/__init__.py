@@ -10,14 +10,14 @@ from homeassistant.helpers.template import Template, TemplateError
 from homeassistant.util.yaml.loader import _add_reference, SafeLineLoader
 
 DOMAIN = "lovelace_preprocessor"
+TAG = '!template'
 _LOGGER = logging.getLogger(__name__)
 
 class TemplateConstructor(object):
     hass = None
     config = {}
-    yaml_tag = '!template'
 
-    def setup(self, hass, config):
+    def __init__(self, hass, config):
         self.hass = hass
         self.config.update(config)
 
@@ -26,11 +26,11 @@ class TemplateConstructor(object):
         stream = self._render_template(filename, variables)
 
         try:
-            document = yaml.load(stream, SafeLineLoader) or OrderedDict()
+            document = yaml.load(stream, Loader=lambda _stream: SafeLineLoader(_stream, loader.secrets)) or OrderedDict()
             return _add_reference(document, loader, node)
         except yaml.YAMLError as ex:
             _LOGGER.error("Unable to parse rendered YAML in %s: %s", filename, ex)
-            raise HomeAssistantError(exc)
+            raise HomeAssistantError(ex) from ex
 
     def _read_tag(self, loader, node):
         if isinstance(node, yaml.ScalarNode):
@@ -52,20 +52,22 @@ class TemplateConstructor(object):
 
             template.ensure_valid()
 
-            rendered = template.render({**variables, "_global": self.config.get("variables", {})})
+            rendered = template.render(
+                variables = {**variables, "_global": self.config.get("variables", {})},
+                limited = True,
+            )
             stream = io.StringIO(rendered)
             stream.name = filename
             return stream
         except (FileNotFoundError, UnicodeDecodeError) as ex:
             _LOGGER.error("Unable to read file %s: %s", filename, ex)
-            raise HomeAssistantError(ex)
+            raise HomeAssistantError(ex) from ex
         except TemplateError as ex:
             _LOGGER.error("Unable to render file %s: %s", filename, ex)
-            raise HomeAssistantError(ex)
+            raise HomeAssistantError(ex) from ex
 
 
-constructor = TemplateConstructor()
 def setup(hass, config):
-    constructor.setup(hass, config.get(DOMAIN))
-    yaml.SafeLoader.add_constructor(constructor.yaml_tag, constructor)
+    constructor = TemplateConstructor(hass, config.get(DOMAIN))
+    SafeLineLoader.add_constructor(TAG, constructor)
     return True
