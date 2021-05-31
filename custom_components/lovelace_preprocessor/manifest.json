@@ -3,7 +3,7 @@
   "name": "Lovelace Preprocessor",
   "documentation": "",
   "iot_class": "local_push",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "dependencies": ["lovelace"],
   "codeowners": [],
   "requirements": ["jinja2"]
