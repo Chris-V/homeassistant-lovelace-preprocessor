@@ -1,8 +1,8 @@
-import os
-import logging
-import io
 from collections import OrderedDict
-
+import io
+import logging
+import os
+import re
 import yaml
 
 from homeassistant.exceptions import HomeAssistantError
@@ -10,12 +10,14 @@ from homeassistant.helpers.template import Template, TemplateError
 from homeassistant.util.yaml.loader import _add_reference, SafeLineLoader
 
 DOMAIN = "lovelace_preprocessor"
-TAG = '!template'
+TAG = "!template"
 _LOGGER = logging.getLogger(__name__)
 
 class TemplateConstructor(object):
     hass = None
     config = {}
+
+    yaml_template_matcher = re.compile(".*\.ya?ml(\.j2)?", re.IGNORECASE)
 
     def __init__(self, hass, config):
         self.hass = hass
@@ -24,10 +26,15 @@ class TemplateConstructor(object):
     def __call__(self, loader, node):
         filename, variables = self._read_tag(loader, node)
         stream = self._render_template(filename, variables)
+        stream.seek(0)
 
         try:
-            document = yaml.load(stream, Loader=lambda _stream: SafeLineLoader(_stream, loader.secrets)) or OrderedDict()
-            return _add_reference(document, loader, node)
+            if self.yaml_template_matcher.match(filename):
+                sub_loader = lambda _stream: SafeLineLoader(_stream, loader.secrets)
+                document = yaml.load(stream, Loader=sub_loader)
+                return _add_reference(document, loader, node)
+            else:
+                return _add_reference(stream.read(), loader, node)
         except yaml.YAMLError as ex:
             _LOGGER.error("Unable to parse rendered YAML in %s: %s", filename, ex)
             raise HomeAssistantError(ex) from ex
