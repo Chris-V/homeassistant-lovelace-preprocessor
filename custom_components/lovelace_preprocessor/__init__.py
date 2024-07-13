@@ -7,7 +7,7 @@ import yaml
 
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.template import Template, TemplateError
-from homeassistant.util.yaml.loader import _add_reference, SafeLineLoader
+from homeassistant.util.yaml.loader import _add_reference, PythonSafeLoader
 
 DOMAIN = "lovelace_preprocessor"
 TAG = "!template"
@@ -17,7 +17,7 @@ class TemplateConstructor(object):
     hass = None
     config = {}
 
-    yaml_template_matcher = re.compile(".*\.ya?ml(\.j2)?", re.IGNORECASE)
+    yaml_template_matcher = re.compile(r".*\.ya?ml(\.j2)?", re.IGNORECASE)
 
     def __init__(self, hass, config):
         self.hass = hass
@@ -30,7 +30,7 @@ class TemplateConstructor(object):
 
         try:
             if self.yaml_template_matcher.match(filename):
-                sub_loader = lambda _stream: SafeLineLoader(_stream, loader.secrets)
+                sub_loader = lambda _stream: PythonSafeLoader(_stream, loader.secrets)
                 document = yaml.load(stream, Loader=sub_loader)
                 return _add_reference(document, loader, node)
             else:
@@ -76,5 +76,5 @@ class TemplateConstructor(object):
 
 def setup(hass, config):
     constructor = TemplateConstructor(hass, config.get(DOMAIN))
-    SafeLineLoader.add_constructor(TAG, constructor)
+    PythonSafeLoader.add_constructor(TAG, constructor)
     return True
