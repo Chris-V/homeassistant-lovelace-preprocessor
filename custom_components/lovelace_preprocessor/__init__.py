@@ -5,9 +5,9 @@ import os
 import re
 import yaml
 
+from annotatedyaml.loader import add_constructor, _add_reference, PythonSafeLoader
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.template import Template, TemplateError
-from homeassistant.util.yaml.loader import _add_reference, PythonSafeLoader
 
 DOMAIN = "lovelace_preprocessor"
 TAG = "!template"
@@ -41,7 +41,7 @@ class TemplateConstructor(object):
 
     def _read_tag(self, loader, node):
         if isinstance(node, yaml.ScalarNode):
-            filename = node.value
+            filhename = node.value
             variables = {}
         else:
             mapping = loader.construct_mapping(node, deep=True)
@@ -76,5 +76,5 @@ class TemplateConstructor(object):
 
 def setup(hass, config):
     constructor = TemplateConstructor(hass, config.get(DOMAIN))
-    PythonSafeLoader.add_constructor(TAG, constructor)
+    add_constructor(TAG, constructor)
     return True
